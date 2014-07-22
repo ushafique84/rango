@@ -3,6 +3,8 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response
 from rango.models import Category
 from rango.models import Page
+from rango.forms import CategoryForm
+from rango.forms import PageForm
 
 def index(request):
 	#Request the context of the request.
@@ -16,11 +18,10 @@ def index(request):
 			'pages': page_list,
 			}
 	
-	print context_dict
 	#We loop through each category returned, and create a URL attribute.
 	#This attribute stores an encoded URL (e.g. spaces replaced with underscores).
 	for category in category_list:
-		category.url = category.name.replace(' ', '_')
+		category.url = encode_url(category)
 
 	for page in page_list:
 		page.url 
@@ -33,6 +34,12 @@ def index(request):
 def about(request):
 	return HttpResponse("Rango Says: Here is the about page.<a href='/rango/'>Index</a>")
 
+def decode_url(url):
+	return url.replace('_', ' ')
+
+def encode_url(url):
+	return url.name.replace(' ', '_')
+
 def category(request, category_name_url):
 	#Request our context from the request passed to us.
 	context = RequestContext(request)
@@ -40,11 +47,12 @@ def category(request, category_name_url):
 	#Change underscores in the category name to spaces.
 	#URLs don't handle spaces well, so we encode them as underscores
 	#We can then simply replace the underscores with spaces again to get the name
-	category_name = category_name_url.replace('_', ' ')
+	category_name = decode_url(category_name_url)
 
 	#Create a context dictionary which we can pass to the templace rendering
 	#We start by containing the name of the category passed by the user.
-	context_dict = {'category_name': category_name}
+	context_dict = {'category_name': category_name,
+			'category_name_url': category_name_url}
 
 	try:
 		#Can we find a category with the given name?
@@ -68,3 +76,72 @@ def category(request, category_name_url):
 	
 	#Go render the response and return it to the client.
 	return render_to_response('rango/category.html', context_dict, context)
+
+def add_category(request):
+	#Get the context from the request.
+	context = RequestContext(request)
+
+	#A HTTP POST?
+	if request.method == 'POST':
+		form = CategoryForm(request.POST)
+
+		#Have we been provided with a valid form?
+		if form.is_valid():
+			#Save the new category to the database
+			form.save(commit=True)
+
+			#Now call the index() view
+			#The user will be shown the homepage
+			return index(request)
+		else:
+			#The supplied form contained errors - print them to the terminal
+			print form.errors
+	else:
+		#If the request was not a POST, display the form to enter details.
+		form = CategoryForm()
+	
+	#Bad form (or form details), no form supplied...
+	#Render the form with error messages (if any)
+	return render_to_response('rango/add_category.html', {'form': form}, context)
+
+def add_page(request, category_name_url):
+	#Get the context from the request
+	context = RequestContext(request)
+	
+	category_name = decode_url(category_name_url)
+
+	#A HTTP POST?
+	if request.method == 'POST':
+		form = PageForm(request.POST)
+
+		if form.is_valid():
+			#Cannot commit right away because not all fields are automatically populated
+			page = form.save(commit=False)
+		
+			#Retrieve the associated category object that the page can be added to. Wrapping in a try
+			#block to make sure the category exists
+			try:
+				cat = Category.objects.get(name=category_name)
+				page.category = cat
+			except Category.DoesNotExist:
+				#Go back and render the add category form to show the category does not exist
+				return render_to_response('rango/add_category.html', {}, context)
+			
+			#Set views to default value of 0
+			page.views = 0
+
+			#Save the new model instance
+			page.save()
+
+			#now that the page is saved, display the category instead
+			return category(request, category_name_url)
+		else:
+			print form.errors
+	else:
+		#if the request was not a POST, display the form to enter details	
+		form = PageForm()
+
+	return render_to_response('rango/add_page.html', {'category_name_url': category_name_url, 
+				'category_name': category_name, 'form': form},
+				context)
+
