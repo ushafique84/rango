@@ -1,35 +1,32 @@
-<!DOCTYPE html>
-<html>
-	<head>
-		<title>Rango</title>
-	</head>
+{% extends 'rango/base.html' %}
 
-	<body>
+{% block body_block %}
+
+	{% if user.is_authenticated %}
+		<h1>Rango says...hello {{ user.username }}!</h1>
+	{% else %}	
 		<h1>Rango says...hello world!</h1>
-		{% if categories %}
-			<ul>
-				{% for category in categories %}
-				<li><a href="/rango/category/{{ category.url }}">{{ category.name }}</a></li>
-				{% endfor %}
-			</ul>
-		{% else %}
-			<strong>There are no categories present.</strong>
-		{% endif %}
+	{% endif %}
+	{% if categories %}
+		<ul>
+			{% for category in categories %}
+			<li><a href="/rango/category/{{ category.url }}">{{ category.name }}</a></li>
+			{% endfor %}
+		</ul>
+	{% else %}
+		<strong>There are no categories present.</strong>
+	{% endif %}
 		
-		<strong>Top 5 Most Viewed Pages</strong>
-		{% if pages %}
-			<ul>
-				{% for page in pages %}
-				<li><a href="{{ page.url }}">{{ page.title }}</a></li>
-				{% endfor %}
-			</ul>
-		{% else %}
-			<strong>No pages have been viewed.</strong>
-		{% endif %}	
+	<strong>Top 5 Most Viewed Pages</strong>
+	{% if pages %}
+		<ul>
+			{% for page in pages %}
+			<li><a href="{{ page.url }}">{{ page.title }}</a></li>
+			{% endfor %}
+		</ul>
+	{% else %}
+		<strong>No pages have been viewed.</strong>
+	{% endif %}
 
-		<a href="/rango/add_category/">Add a New Category</a>	
-		<br></br>	
-		<a href="/rango/about/">About</a>
-	</body>
-
-</html>
+{% endblock %}
+		

@@ -23,6 +23,10 @@ DATABASE_PATH = os.path.join(PROJECT_PATH,'rango.db')
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
+#defining this variable to redirect users to login page when
+#attempting to view restricted pages
+LOGIN_URL = '/rango/login/'
+
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
 )
@@ -137,8 +141,8 @@ TEMPLATE_DIRS = (
 )
 
 INSTALLED_APPS = (
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
+    'django.contrib.auth', #provides Django with access to auth system
+    'django.contrib.contenttypes', #used by auth apps track models installed in db
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
